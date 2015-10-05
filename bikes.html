@@ -1,0 +1,66 @@
+<html>
+
+<head>
+	<a name="tooltip" />
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/1.6.19/topojson.min.js"></script>
+	<script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script>
+	<script src="d3.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="d3.css">
+
+</head>
+
+<body>
+	<script>
+		var width = 1024,
+			height = 768;
+		var svg = d3.select("svg")
+			.attr("width", width)
+			.attr("height", height);
+		//projection is a function object that takes coordinates
+		//and maps them to the square bounds of the screen.
+		//'rotate' and 'center' are coordinates grabbed by scrolling
+		//manhattan into view in Google maps and hacking the URL.
+		//'scale' and 'precision' are the result of trial and error.
+		var projection = d3.geo.albers()
+			.scale(300000)
+			.rotate([73.969,0])
+			.center([0,40.759])
+			.translate([width/2,height/2])
+			.precision(.0001);
+		//this is the tooltip shown when you mouseover a station.
+		var tip = d3.tip()
+			.attr('class', 'd3-tip')
+			.offset(function(stationData) {
+				console.log(stationData)
+  				return projection([stationData.longitude,stationData.latitude])
+			})
+			.html(function(d) {
+				return "<strong>Name:</strong> <span style='color:red'>" + d.stationName + "</span>";
+			});
+		//another function object which applies the projection to 
+		//the various borough outlines 
+		var path = d3.geo.path()
+			.projection(projection);
+		
+		svg.call(tip);
+		
+		//same for the citibike spots. This isn't in a well-known format,
+		//however, so we have to parse the data ourselves. Luckily, D3
+		//is really good at doing this.
+		d3.json("citibike.json", function(error, data){
+			svg.append("g").selectAll("circles.points")
+				.data(data.stationBeanList)
+				.enter()
+				.append("circle")
+				.attr("r", 5)
+				.attr("transform", function(stationData){
+					return "translate(" + projection([stationData.longitude,stationData.latitude]) + ")"
+				})
+			});
+
+	</script>
+</body>
+
+</html>
